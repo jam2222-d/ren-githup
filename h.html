@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>เกมอัลกอริทึม : คิดเป็นลำดับขั้น</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Prompt", sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #333;
+    }
+
+    .game {
+      background: #ffffff;
+      width: 90%;
+      max-width: 900px;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+      animation: fadeIn 1s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+      color: #4f46e5;
+    }
+
+    .info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      font-size: 18px;
+    }
+
+    .question {
+      background: #eef2ff;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      font-size: 20px;
+    }
+
+    .steps, .answer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .step {
+      background: #e0e7ff;
+      padding: 12px 16px;
+      border-radius: 10px;
+      cursor: grab;
+      font-size: 16px;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .step:hover {
+      background: #c7d2fe;
+      transform: scale(1.05);
+    }
+
+    .answer {
+      min-height: 70px;
+      border: 3px dashed #6366f1;
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    button {
+      display: block;
+      margin: auto;
+      padding: 12px 30px;
+      font-size: 18px;
+      border: none;
+      border-radius: 30px;
+      background: #4f46e5;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    button:hover {
+      background: #4338ca;
+      transform: translateY(-2px);
+    }
+
+    .result {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <audio id="bgm" loop autoplay>
+    <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_7c1b6a8b59.mp3" type="audio/mpeg">
+  </audio>
+
+  <div class="game">
+    <h1>🎮 เกมฝึกอัลกอริทึม</h1>
+    <div style="text-align:center;margin-bottom:10px;">
+      <button onclick="toggleMusic()" style="font-size:14px;padding:6px 16px;">🔊 เปิด / ปิด เพลง</button>
+    </div>
+
+    <div class="info">
+      <div>ข้อที่: <span id="qNum">1</span></div>
+      <div>คะแนน: <span id="score">0</span></div>
+    </div>
+
+    <div class="question" id="question"></div>
+
+    <div class="steps" id="steps"></div>
+
+    <div class="answer" id="answer">👉 ลากขั้นตอนมาวางเรียงที่นี่</div>
+
+    <button onclick="checkAnswer()">ตรวจคำตอบ</button>
+
+    <div class="result" id="result"></div>
+  </div>
+
+  <script>
+    const questions = [
+      { text: 'เรียงลำดับขั้นตอนการแปรงฟันให้ถูกต้อง', order: ['บีบยาสีฟันใส่แปรง', 'แปรงฟันให้ทั่ว', 'บ้วนปากด้วยน้ำ', 'ล้างแปรงสีฟัน'] },
+      { text: 'เรียงลำดับขั้นตอนการเปิดคอมพิวเตอร์', order: ['กดปุ่มเปิดเครื่อง', 'รอระบบโหลด', 'ใส่รหัสผ่าน', 'เปิดโปรแกรมที่ต้องการ'] },
+      { text: 'เรียงลำดับขั้นตอนการทำบะหมี่กึ่งสำเร็จรูป', order: ['ต้มน้ำให้เดือด', 'ใส่เส้นบะหมี่', 'ใส่เครื่องปรุง', 'รอให้สุกและรับประทาน'] },
+      { text: 'เรียงลำดับขั้นตอนการล้างมือให้ถูกสุขลักษณะ', order: ['เปิดน้ำ', 'ฟอกสบู่ให้ทั่วมือ', 'ล้างออกด้วยน้ำสะอาด', 'เช็ดมือให้แห้ง'] },
+      { text: 'เรียงลำดับขั้นตอนการเข้าเรียนออนไลน์', order: ['เปิดอุปกรณ์', 'เชื่อมต่ออินเทอร์เน็ต', 'เข้าโปรแกรมเรียนออนไลน์', 'ฟังครูสอน'] },
+      { text: 'เรียงลำดับขั้นตอนการปลูกต้นไม้', order: ['เตรียมกระถางและดิน', 'ใส่ต้นกล้าลงดิน', 'กลบดิน', 'รดน้ำ'] },
+      { text: 'เรียงลำดับขั้นตอนการทำการบ้าน', order: ['อ่านโจทย์', 'วางแผนการทำ', 'ลงมือทำ', 'ตรวจทานงาน'] },
+      { text: 'เรียงลำดับขั้นตอนการข้ามถนนอย่างปลอดภัย', order: ['หยุดรอที่ทางม้าลาย', 'มองซ้ายและขวา', 'เดินข้ามเมื่อปลอดภัย', 'ขึ้นฟุตปาธ'] },
+      { text: 'เรียงลำดับขั้นตอนการใช้งานโปรแกรมคอมพิวเตอร์', order: ['เปิดโปรแกรม', 'เลือกเมนูที่ต้องการ', 'ใช้งานตามวัตถุประสงค์', 'ปิดโปรแกรม'] },
+      { text: 'เรียงลำดับขั้นตอนการแก้ปัญหาแบบอัลกอริทึม', order: ['ระบุปัญหา', 'วิเคราะห์ปัญหา', 'วางแผนขั้นตอน', 'ลงมือแก้ปัญหา'] }
+    ];
+
+    let current = 0;
+    let score = 0;
+
+    const questionEl = document.getElementById('question');
+    const stepsEl = document.getElementById('steps');
+    const answerEl = document.getElementById('answer');
+    const resultEl = document.getElementById('result');
+    const scoreEl = document.getElementById('score');
+    const qNumEl = document.getElementById('qNum');
+
+    function loadQuestion() {
+      const q = questions[current];
+      questionEl.textContent = q.text;
+      qNumEl.textContent = current + 1;
+      resultEl.textContent = '';
+      stepsEl.innerHTML = '';
+      answerEl.innerHTML = '';
+
+      const shuffled = [...q.order].sort(() => Math.random() - 0.5);
+      shuffled.forEach(text => {
+        const div = document.createElement('div');
+        div.className = 'step';
+        div.textContent = text;
+        div.draggable = true;
+        div.addEventListener('dragstart', e => e.dataTransfer.setData('text', text));
+        stepsEl.appendChild(div);
+      });
+    }
+
+    answerEl.addEventListener('dragover', e => e.preventDefault());
+    answerEl.addEventListener('drop', e => {
+      e.preventDefault();
+      const text = e.dataTransfer.getData('text');
+      const div = document.createElement('div');
+      div.className = 'step';
+      div.textContent = text;
+      answerEl.appendChild(div);
+    });
+
+    function checkAnswer() {
+      const user = Array.from(answerEl.children).map(el => el.textContent);
+      const correct = questions[current].order;
+
+      if (user.length !== correct.length) {
+        resultEl.textContent = '⚠️ กรุณาเรียงให้ครบทุกขั้นตอน';
+        resultEl.style.color = 'orange';
+        return;
+      }
+
+      const ok = user.every((s, i) => s === correct[i]);
+
+      if (ok) {
+        score += 10;
+        scoreEl.textContent = score;
+        resultEl.textContent = '✅ ถูกต้อง เยี่ยมมาก!';
+        resultEl.style.color = 'green';
+
+        setTimeout(() => {
+          current++;
+          if (current < questions.length) {
+            loadQuestion();
+          } else {
+            questionEl.textContent = '🎉 จบเกมแล้ว!';
+            stepsEl.innerHTML = '';
+            answerEl.innerHTML = '';
+            resultEl.textContent = 'คะแนนรวม: ' + score;
+          }
+        }, 1200);
+      } else {
+        resultEl.textContent = '❌ ยังไม่ถูก ลองใหม่อีกครั้ง';
+        resultEl.style.color = 'red';
+
+        // เริ่มข้อใหม่หลังตอบผิด
+        setTimeout(() => {
+          loadQuestion();
+        }, 1500);
+      }
+    }
+
+    const bgm = document.getElementById('bgm');
+    function toggleMusic() {
+      if (bgm.paused) bgm.play();
+      else bgm.pause();
+    }
+
+    loadQuestion();
+  </script>
+</body>
+</html>
